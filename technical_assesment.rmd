@@ -35,9 +35,11 @@ labeled_shot_data = raw_shot_data %>%
 
 ```{r}
 team_shot_distribution = labeled_shot_data %>%
+  group_by(team) %>%
+  mutate(count = n()) %>%
   group_by(team, shot_type) %>%
-  count() %>%
-  rename(shot_attempted_count = n)
+  summarize(pct = n()/count) %>%
+  distinct()
 
 team_shot_distribution
 ```
@@ -55,7 +57,7 @@ shot_points = labeled_shot_data %>%
 
 efficiency_distribution = shot_points %>%
   group_by(team, shot_type) %>%
-  summarize(eFG = sum(points)/n())
+  summarize(eFG = (sum(points)/n())/2)
 
 efficiency_distribution
 ```
