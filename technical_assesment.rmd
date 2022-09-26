@@ -1,0 +1,62 @@
+---
+title: "OKC data"
+author: "Enzo Moraes Mescall"
+date: "2022-09-26"
+output: html_document
+---
+
+```{r setup}
+library(tidyverse)
+```
+
+```{r}
+raw_shot_data = read.csv("~/Documents/Jobs/OKC/shots_data.csv")
+head(raw_shot_data)
+```
+
+## Calculating the type of shot
+
+Restrictions for the shots:
+Corner 3: y <= 7.8, x > 22.0 or x < -22.0
+Non-corner 3: y > 7.8, sqrt(x^2+y^2) > 23.75
+2pt: all other shots
+
+```{r}
+# applying the conditions
+labeled_shot_data = raw_shot_data %>%
+    mutate(shot_type = case_when(
+      (y <= 7.8 & abs(x) > 22) ~ 'C3',
+      (y > 7.8 & sqrt(x^2 + y^2) > 23.75) ~ 'NC3',
+      TRUE ~ '2PT'
+    ))
+```
+
+## Calculating the team's shot distribution
+
+```{r}
+team_shot_distribution = labeled_shot_data %>%
+  group_by(team, shot_type) %>%
+  count() %>%
+  rename(shot_attempted_count = n)
+
+team_shot_distribution
+```
+
+## Caluclating eFG%
+
+```{r}
+# added column of amount of points scored per shot attempt
+shot_points = labeled_shot_data %>%
+    mutate(points = case_when(
+      (shot_type == 'C3' | shot_type == 'NC3') & fgmade == 1 ~ 3,
+      fgmade == 1 ~ 2,
+      TRUE ~ 0
+    ))
+
+efficiency_distribution = shot_points %>%
+  group_by(team, shot_type) %>%
+  summarize(eFG = sum(points)/n())
+
+efficiency_distribution
+```
+
